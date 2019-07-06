@@ -1,12 +1,9 @@
-﻿using iText.Kernel.Pdf;
+﻿using IText7Example.Models;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IText7Example
 {
@@ -14,42 +11,69 @@ namespace IText7Example
     {
         static void Main(string[] args)
         {
+            var budget = new Budget("First budget", new List<Transaction>() {
+                    new Transaction(DateTime.Now, 1001, 11, "Lorem Ipsum is simply dummy text of the printing and typesetting"),
+                    new Transaction(DateTime.Now, 1002, 12, "Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC"),
+                    new Transaction(DateTime.Now, 1003, 13),
+                    new Transaction(DateTime.Now, 1004, 14),
+                    new Transaction(DateTime.Now, 1005, 15)});
+
             string filename = "Doc1.pdf";
 
             //Create new PDF document
             Document document = new Document(PageSize.A4, 20f, 20f, 20f, 20f);
 
             iTextSharp.text.pdf.PdfWriter.GetInstance(document, new FileStream(filename, FileMode.Create));
-            PdfPTable table = new PdfPTable(3);
+            PdfPTable table = new PdfPTable(4);
 
-            // Relative col widths in proportions - 1/3 and 2/3
-            float[] widths = new float[] { 2f, 4f, 6f };
+            // Relative col widths in proportions
+            float[] widths = new float[] { 1,1,2,4 };
             table.SetWidths(widths);
-            table.HorizontalAlignment = 0;
+            // Make the table as wide as the page
+            table.WidthPercentage = 100;
 
-            // Leave a gap before and after the table
-            table.SpacingBefore = 20f;
-            table.SpacingAfter = 30f;
+            var font = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD);
 
-
-
-            PdfPCell cell = new PdfPCell(new Phrase("Header spanning 3 columns"));
-            cell.Colspan = 3;
-            cell.HorizontalAlignment = 1; //0=Left, 1=Center, 2=Right
-
+            // Set a big cell at the top for showing the title
+            PdfPCell cell = new PdfPCell(new Phrase($"Report for {budget.Title}", font));
+            cell.Colspan = 4;
+            cell.HorizontalAlignment = Element.ALIGN_CENTER;
             table.AddCell(cell);
-            table.AddCell("Col 1 Row 1");
-            table.AddCell("Col 2 Row 1");
-            table.AddCell("Col 3 Row 1");
-            table.AddCell("Col 1 Row 2");
-            table.AddCell("Col 2 Row 2");
-            table.AddCell("Col 3 Row 2");
 
+            // Reset the cell, so it doesn't keep the old formatting (mostly for removing the column span)
+            cell = new PdfPCell();
+            cell.HorizontalAlignment = Element.ALIGN_CENTER;
+            cell.VerticalAlignment = Element.ALIGN_MIDDLE;
+
+            // Add the column headers
+            cell.Phrase = new Phrase("Date", font);
+            table.AddCell(cell);
+
+            cell.Phrase = new Phrase("Amount", font);
+            table.AddCell(cell);
+
+            cell.Phrase = new Phrase("Coins", font);
+            table.AddCell(cell);
+
+            cell.Phrase = new Phrase("Note", font);
+            table.AddCell(cell);
+
+            // Add the rows with data
+            foreach(var item in budget.Transactions)
+            {
+                cell.Phrase = new Phrase(item.Date.ToString());
+                table.AddCell(cell);
+                cell.Phrase = new Phrase(item.Amount.ToString());
+                table.AddCell(cell);
+                cell.Phrase = new Phrase(item.Coins.ToString());
+                table.AddCell(cell);
+                cell.Phrase = new Phrase(item.Note);
+                table.AddCell(cell);
+            }
 
             document.Open();
             document.Add(table);
             document.Close();
-
 
         }
     }
