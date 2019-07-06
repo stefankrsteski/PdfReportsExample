@@ -1,9 +1,9 @@
-﻿using PdfSharp.Drawing;
-using PdfSharp.Pdf;
+﻿using MigraDoc.DocumentObjectModel;
+using MigraDoc.DocumentObjectModel.Tables;
+using MigraDoc.Rendering;
 using PdfSharpExample.Models;
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace PdfSharpExample
 {
@@ -12,12 +12,77 @@ namespace PdfSharpExample
         static void Main(string[] args)
         {
             List<Budget> budgets = GenerateBudgets();
-            var document = new PdfDocument();
-            var page = document.AddPage();
-            var gfx = XGraphics.FromPdfPage(page);
-            var font = new XFont("Verdana", 20);
-            gfx.DrawString("Test of PdfSharp", font, new XSolidBrush(XColor.FromArgb(0, 0, 0)), 10, 130);
-            document.Save(Path.Combine("test.pdf"));
+            var document = new Document();
+
+            var section = document.AddSection();
+            section.AddParagraph($"List of transactions in Budget with title {budgets[0].Title}");
+            section.AddParagraph(); // Add an empty paragraph to make it look good
+
+            float sectionWidth = (int)document.DefaultPageSetup.PageWidth - (int)document.DefaultPageSetup.LeftMargin - (int)document.DefaultPageSetup.RightMargin;
+            float columnWidth = sectionWidth / 4; // Divide by 4 because we will have 4 columns
+
+            var table = new Table();
+            table.Borders.Width = 0.5;
+
+            var column = table.AddColumn(columnWidth);
+            column.Format.Alignment = ParagraphAlignment.Center;
+
+            column = table.AddColumn(columnWidth);
+            column.Format.Alignment = ParagraphAlignment.Center;
+
+            column = table.AddColumn(columnWidth);
+            column.Format.Alignment = ParagraphAlignment.Center;
+
+            column = table.AddColumn(columnWidth);
+            column.Format.Alignment = ParagraphAlignment.Center;
+
+
+            var row = table.AddRow();
+            var cell = row.Cells[0];
+            cell.AddParagraph("Date");
+            cell.Format.Font.Bold = true;
+
+            cell = row.Cells[1];
+            cell.AddParagraph("Amount");
+            cell.Format.Font.Bold = true;
+
+            cell = row.Cells[2];
+            cell.AddParagraph("Coins");
+            cell.Format.Font.Bold = true;
+
+            cell = row.Cells[3];
+            cell.AddParagraph("Note");
+            cell.Format.Font.Bold = true;
+
+            foreach (var item in budgets[0].Transactions)
+            {
+                row = table.AddRow();
+
+                cell = row.Cells[0];
+                cell.VerticalAlignment = VerticalAlignment.Center;
+                cell.AddParagraph(item.Date.ToString());
+
+                cell = row.Cells[1];
+                cell.VerticalAlignment = VerticalAlignment.Center;
+                cell.AddParagraph(item.Amount.ToString());
+
+                cell = row.Cells[2];
+                cell.VerticalAlignment = VerticalAlignment.Center;
+                cell.AddParagraph(item.Coins.ToString());
+
+                cell = row.Cells[3];
+                cell.VerticalAlignment = VerticalAlignment.Center;
+                cell.AddParagraph(item.Note);
+            }
+
+            document.LastSection.Add(table);
+
+            var pdfDocumentRenderer = new PdfDocumentRenderer(false);
+            pdfDocumentRenderer.Document = document;
+            pdfDocumentRenderer.RenderDocument();
+
+            pdfDocumentRenderer.PdfDocument.Save("Table test.pdf");
+
 
         }
 
